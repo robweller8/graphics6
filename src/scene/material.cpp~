@@ -1,3 +1,5 @@
+#include <math.h>
+#include <algorithm>
 #include "ray.h"
 #include "material.h"
 #include "light.h"
@@ -25,7 +27,7 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
   // somewhere in your code in order to compute shadows and light falloff.
   if( debugMode )
     std::cout << "Debugging Phong code..." << std::endl;
-    Vec3d color = kd(i);
+    Vec3d color;
   // When you're iterating through the lights,
   // you'll want to use code that looks something
   // like this:
@@ -36,10 +38,30 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
    {
    		Light* pLight = *litr;
                 Vec3d position = r.at(i.t);
-                Vec3d lightDirection = (*pLight).getDirection(position);          
+                Vec3d lightDirection = (*pLight).getDirection(position);
+                lightDirection.normalize();
+                Vec3d normal = i.N;
+                normal.normalize();
+                Camera view = scene->getCamera();
+                Vec3d eye = view.getEye();
+                Vec3d viewing = eye - position;
+                viewing.normalize();
+                double intensity = (*pLight).distanceAttenuation(position);
+                Vec3d reflect = normal*(2*(normal*lightDirection)) - lightDirection;
+                reflect.normalize();
+                double shine = max(0.0, shininess(i));
+                double specular = pow(reflect*viewing, shine);
+                color += ka(i)*intensity;
+                color += kd(i)*((normal*lightDirection)*intensity);
+                color += ks(i)*specular*intensity;
    }
 	
-
+  color[0] = min(color[0],1.0);
+  color[1] = min(color[1],1.0);
+  color[2] = min(color[2],1.0);
+  color[0] = max(color[0],0.0);
+  color[1] = max(color[1],0.0);
+  color[2] = max(color[2],0.0);
   return color;
 
 }
