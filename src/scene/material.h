@@ -9,6 +9,7 @@
 
 #include "../vecmath/vec.h"
 #include "../vecmath/mat.h"
+#include "ray.h"
 #include <string>
 
 class Scene;

@@ -6,7 +6,7 @@
 using std::min;
 using std::max;
 #endif
-
+#include "../vecmath/vec.h"
 #include "scene.h"
 
 class Light

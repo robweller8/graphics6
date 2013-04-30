@@ -1,5 +1,5 @@
 #include <cmath>
-
+#include <algorithm>
 #include "light.h"
 
 
@@ -37,11 +37,25 @@ double PointLight::distanceAttenuation( const Vec3d& P ) const
 {
 
   // YOUR CODE HERE
+  // These three values are the a, b, and c in the distance
+  // attenuation function (from the slide labelled 
+  // "Intensity drop-off with distance"):
+  //    f(d) = min( 1, 1/( a + b d + c d^2 ) )
+ //     float constantTerm;		// a
+ //     float linearTerm;		// b
+ //     float quadraticTerm;	// c
 
   // You'll need to modify this method to attenuate the intensity 
   // of the light based on the distance between the source and the 
   // point P.  For now, we assume no attenuation and just return 1.0
-  return 1.0;
+
+  Vec3d distance = position - P;
+  double d = distance.length();
+  double intensity = min(1.0, 1.0/(constantTerm + 
+                                     linearTerm*d + 
+                                       quadraticTerm*pow(d,2)));
+
+  return intensity;
 
 }
 

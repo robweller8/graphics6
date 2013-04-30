@@ -3,6 +3,7 @@
 #include "ray.h"
 #include "material.h"
 #include "light.h"
+#include "ray.h"
 
 #include "../fileio/bitmap.h"
 #include "../fileio/pngimage.h"
@@ -50,10 +51,14 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
                 Vec3d reflect = normal*(2*(normal*lightDirection)) - lightDirection;
                 reflect.normalize();
                 double shine = max(0.0, shininess(i));
-                double specular = pow(reflect*viewing, shine);
+                double specular = max(0.0, pow(reflect*viewing, shine));
                 color += ka(i)*intensity;
                 color += kd(i)*((normal*lightDirection)*intensity);
                 color += ks(i)*specular*intensity;
+                if(r.getType() == ray::REFLECTION)
+                  color += kr(i);
+                if(r.getType() == ray::REFRACTION)
+                  color += kt(i);
    }
 	
   color[0] = min(color[0],1.0);

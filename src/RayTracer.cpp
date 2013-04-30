@@ -63,9 +63,38 @@ Vec3d RayTracer::traceRay( const ray& r, const Vec3d& thresh, int depth )
 
     const Material& m = i.getMaterial();
 
+    if(depth < traceUI->getDepth()) {
+      Vec3d position = r.at(i.t);
+      Vec3d normal = i.N;
+      normal.normalize();
+      Vec3d incoming = position - r.getPosition();;
+      incoming.normalize();
+      Vec3d reflectionD = normal*(2*(incoming*normal)) - incoming;
+      reflectionD.normalize();
+      ray reflective( position, reflectionD, ray::REFLECTION );
+      traceRay(reflective, Vec3d(1.0,1.0,1.0), depth++);
+      double n1;
+      double n2;
+      double mIndex = m.index(i);
+      if((normal*incoming) <= 90){
+         n1 = 1.0;
+         n2 = mIndex;
+      } else {
+         n1 = mIndex;
+         n2 = 1.0;
+         normal = normal*(-1);
+      }
+      double ratio = n1/n2;
+      double ratio2 = ratio*ratio;
+      double theta = incoming*normal;
+      double angle = sqrt(1 - ratio2*(1 - (theta*theta)));
+      Vec3d refraction = incoming*(-1)*ratio + normal*(ratio*theta - angle);
+      refraction.normalize();
+      ray refractive( position, refraction, ray::REFRACTION );
+      traceRay(refractive, Vec3d(1.0,1.0,1.0), depth++);
+    }
     return m.shade(scene, r, i);
 
-	
   } else {
     // No intersection.  This ray travels to infinity, so we color
     // it according to the background color, which in this (simple) case
