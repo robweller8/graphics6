@@ -48,7 +48,14 @@ Vec3d RayTracer::trace( double x, double y )
 Vec3d RayTracer::traceRay( const ray& r, const Vec3d& thresh, int depth )
 {
   isect i;
-
+  isect j;
+  Vec3d color;
+   /*             if(r.type() == ray::VISIBILITY)
+    cout << " visibility rayll!!" << depth << endl;
+                if(r.type() == ray::REFLECTION)
+    cout << " reflective rayll!!" << depth << endl;
+                if(r.type() == ray::REFRACTION)
+    cout << " REFRACTIVE RAYYYYl!!" << depth << endl;*/
   if( scene->intersect( r, i ) ) {
     // YOUR CODE HERE
 
@@ -60,40 +67,49 @@ Vec3d RayTracer::traceRay( const ray& r, const Vec3d& thresh, int depth )
     // Instead of just returning the result of shade(), add some
     // more steps: add in the contributions from reflected and refracted
     // rays.
-
     const Material& m = i.getMaterial();
-
-    if(depth < traceUI->getDepth()) {
+    if(depth <= traceUI->getDepth()) {
       Vec3d position = r.at(i.t);
       Vec3d normal = i.N;
       normal.normalize();
-      Vec3d incoming = position - r.getPosition();;
+      Vec3d incoming = r.getPosition() - position;
       incoming.normalize();
       Vec3d reflectionD = normal*(2*(incoming*normal)) - incoming;
       reflectionD.normalize();
-      ray reflective( position, reflectionD, ray::REFLECTION );
-      traceRay(reflective, Vec3d(1.0,1.0,1.0), depth++);
+      ray reflective(position, reflectionD, ray::REFLECTION );
+      color += (traceRay(reflective, Vec3d(1.0,1.0,1.0), depth + 1))*m.kr(i);
       double n1;
       double n2;
       double mIndex = m.index(i);
-      if((normal*incoming) <= 90){
-         n1 = 1.0;
-         n2 = mIndex;
-      } else {
-         n1 = mIndex;
-         n2 = 1.0;
-         normal = normal*(-1);
-      }
-      double ratio = n1/n2;
+      n1 = 1.0;
+      n2 = mIndex;
+      double ratio = n2;
       double ratio2 = ratio*ratio;
-      double theta = incoming*normal;
+      double theta = (incoming*(-1))*normal;
       double angle = sqrt(1 - ratio2*(1 - (theta*theta)));
-      Vec3d refraction = incoming*(-1)*ratio + normal*(ratio*theta - angle);
+      Vec3d refraction = incoming*ratio + normal*(ratio*theta - angle);
       refraction.normalize();
       ray refractive( position, refraction, ray::REFRACTION );
-      traceRay(refractive, Vec3d(1.0,1.0,1.0), depth++);
+      scene->intersect( refractive, j );
+      Vec3d pos = refractive.getPosition();
+      Vec3d position2 = refractive.at(j.t);
+      Vec3d normal2 = j.N*(-1);
+      normal2.normalize();
+      Vec3d incoming2 = position2 - position;
+      incoming2.normalize();
+      double ratiob = n2;
+      double ratio2b = ratio*ratio;
+      double thetab = (incoming2*(-1))*normal2;
+      double angleb = sqrt(1 - ratio2b*(1 - (thetab*thetab)));
+      Vec3d refraction2 = incoming2*ratiob + normal2*(ratiob*thetab - angleb);
+      refraction2.normalize();
+      ray refractive2( position2, refraction2, ray::REFRACTION );
+
+
+      color += (traceRay(refractive2, Vec3d(1.0,1.0,1.0), depth+1))*m.kt(i);
     }
-    return m.shade(scene, r, i);
+    color += m.shade(scene, r, i);
+    return color;
 
   } else {
     // No intersection.  This ray travels to infinity, so we color

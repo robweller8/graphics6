@@ -55,10 +55,10 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
                 color += ka(i)*intensity;
                 color += kd(i)*((normal*lightDirection)*intensity);
                 color += ks(i)*specular*intensity;
-                if(r.type() == ray::REFLECTION)
-                  color += kr(i);
-                if(r.type() == ray::REFRACTION)
-                  color += kt(i);
+                //if(r.type() == ray::REFLECTION)
+                  //color += kr(i);
+                //if(r.type() == ray::REFRACTION)
+                  //color += kt(i);
    }
 	
   color[0] = min(color[0],1.0);
