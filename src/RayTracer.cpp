@@ -77,36 +77,48 @@ Vec3d RayTracer::traceRay( const ray& r, const Vec3d& thresh, int depth )
       Vec3d reflectionD = normal*(2*(incoming*normal)) - incoming;
       reflectionD.normalize();
       ray reflective(position, reflectionD, ray::REFLECTION );
-      color += (traceRay(reflective, Vec3d(1.0,1.0,1.0), depth + 1))*m.kr(i);
+      color += prod((traceRay(reflective, Vec3d(1.0,1.0,1.0), depth + 1)),m.kr(i));
+
       double n1;
       double n2;
       double mIndex = m.index(i);
+
       n1 = 1.0;
       n2 = mIndex;
-      double ratio = n2;
+      double ratio = n1/n2;
+      if(r.type() == ray::REFRACTION)
+        ratio = n2/n1;
       double ratio2 = ratio*ratio;
+      
       double theta = (incoming*(-1))*normal;
-      double angle = sqrt(1 - ratio2*(1 - (theta*theta)));
-      Vec3d refraction = incoming*ratio + normal*(ratio*theta - angle);
+      double internal = 1 - ratio2*(1 - (theta*theta));
+      double angle = sqrt(internal);
+      Vec3d refraction = (-1)*incoming*ratio + normal*(ratio*theta - angle);
       refraction.normalize();
       ray refractive( position, refraction, ray::REFRACTION );
+      ray refractive2( position, refraction, ray::VISIBILITY );
       scene->intersect( refractive, j );
       Vec3d pos = refractive.getPosition();
-      Vec3d position2 = refractive.at(j.t);
-      Vec3d normal2 = j.N*(-1);
-      normal2.normalize();
-      Vec3d incoming2 = position2 - position;
-      incoming2.normalize();
-      double ratiob = n2;
-      double ratio2b = ratio*ratio;
-      double thetab = (incoming2*(-1))*normal2;
-      double angleb = sqrt(1 - ratio2b*(1 - (thetab*thetab)));
-      Vec3d refraction2 = incoming2*ratiob + normal2*(ratiob*thetab - angleb);
-      refraction2.normalize();
-      ray refractive2( position2, refraction2, ray::REFRACTION );
 
 
-      color += (traceRay(refractive2, Vec3d(1.0,1.0,1.0), depth+1))*m.kt(i);
+      //Vec3d position2 = refractive.at(j.t);
+      //Vec3d normal2 = j.N*(-1);
+      //normal2.normalize();
+      //Vec3d incoming2 = position2 - position;
+      //incoming2.normalize();
+      //double ratiob = n2;
+      //double ratio2b = ratio*ratio;
+      //double thetab = (incoming2*(-1))*normal2;
+      //double angleb = sqrt(1 - ratio2b*(1 - (thetab*thetab)));
+      //Vec3d refraction2 = incoming2*ratiob + normal2*(ratiob*thetab - angleb);
+      //refraction2.normalize();
+      //ray refractive2( position2, refraction2, ray::REFRACTION );
+
+
+        if(r.type() != ray::REFRACTION)
+          color += prod((traceRay(refractive, Vec3d(1.0,1.0,1.0), depth+1)),m.kt(i));
+        else
+          color += prod((traceRay(refractive2, Vec3d(1.0,1.0,1.0), depth+1)),m.kt(i));
     }
     color += m.shade(scene, r, i);
     return color;

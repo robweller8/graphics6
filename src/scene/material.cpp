@@ -37,6 +37,7 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
    		litr != scene->endLights(); 
    		++litr )
    {
+                Vec3d thisColor;
    		Light* pLight = *litr;
                 Vec3d position = r.at(i.t);
                 Vec3d lightDirection = (*pLight).getDirection(position);
@@ -52,13 +53,18 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
                 reflect.normalize();
                 double shine = max(0.0, shininess(i));
                 double specular = max(0.0, pow(reflect*viewing, shine));
-                color += ka(i)*intensity;
-                color += kd(i)*((normal*lightDirection)*intensity);
-                color += ks(i)*specular*intensity;
+                thisColor += ka(i)*intensity;//*(*pLight).shadowAttenuation(position);
+                thisColor += kd(i)*((normal*lightDirection)*intensity);//*(*pLight).shadowAttenuation(position);
+                thisColor += ks(i)*specular*intensity;
                 //if(r.type() == ray::REFLECTION)
                   //color += kr(i);
                 //if(r.type() == ray::REFRACTION)
-                  //color += kt(i);
+                  //color *= ;
+                  Vec3d shadow = (*pLight).shadowAttenuation(position);
+                  thisColor[0] *= shadow[0];
+                  thisColor[1] *= shadow[1];
+                  thisColor[2] *= shadow[2];
+                  color += thisColor;
    }
 	
   color[0] = min(color[0],1.0);
