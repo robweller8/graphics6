@@ -99,10 +99,12 @@ Vec3d RayTracer::traceRay( const ray& r, const Vec3d& thresh, int depth )
       ray refractive2( position, refraction, ray::VISIBILITY );
       scene->intersect( refractive, j );
       Vec3d pos = refractive.getPosition();
+      if(internal >= 0){
         if(r.type() != ray::REFRACTION)
           color += prod((traceRay(refractive, Vec3d(1.0,1.0,1.0), depth+1)),m.kt(i));
         else
           color += prod((traceRay(refractive2, Vec3d(1.0,1.0,1.0), depth+1)),m.kt(i));
+      }
       color += m.shade(scene, r, i);
     }
     else{
