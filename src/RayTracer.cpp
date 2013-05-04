@@ -99,28 +99,15 @@ Vec3d RayTracer::traceRay( const ray& r, const Vec3d& thresh, int depth )
       ray refractive2( position, refraction, ray::VISIBILITY );
       scene->intersect( refractive, j );
       Vec3d pos = refractive.getPosition();
-
-
-      //Vec3d position2 = refractive.at(j.t);
-      //Vec3d normal2 = j.N*(-1);
-      //normal2.normalize();
-      //Vec3d incoming2 = position2 - position;
-      //incoming2.normalize();
-      //double ratiob = n2;
-      //double ratio2b = ratio*ratio;
-      //double thetab = (incoming2*(-1))*normal2;
-      //double angleb = sqrt(1 - ratio2b*(1 - (thetab*thetab)));
-      //Vec3d refraction2 = incoming2*ratiob + normal2*(ratiob*thetab - angleb);
-      //refraction2.normalize();
-      //ray refractive2( position2, refraction2, ray::REFRACTION );
-
-
         if(r.type() != ray::REFRACTION)
           color += prod((traceRay(refractive, Vec3d(1.0,1.0,1.0), depth+1)),m.kt(i));
         else
           color += prod((traceRay(refractive2, Vec3d(1.0,1.0,1.0), depth+1)),m.kt(i));
+      color += m.shade(scene, r, i);
     }
-    color += m.shade(scene, r, i);
+    else{
+    color = Vec3d( 0.0, 0.0, 0.0 );
+    }
     return color;
 
   } else {

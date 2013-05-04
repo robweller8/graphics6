@@ -1,9 +1,6 @@
-#include <math.h>
-#include <algorithm>
 #include "ray.h"
 #include "material.h"
 #include "light.h"
-#include "ray.h"
 
 #include "../fileio/bitmap.h"
 #include "../fileio/pngimage.h"
@@ -28,52 +25,68 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
   // somewhere in your code in order to compute shadows and light falloff.
   if( debugMode )
     std::cout << "Debugging Phong code..." << std::endl;
-    Vec3d color;
+
   // When you're iterating through the lights,
   // you'll want to use code that looks something
   // like this:
-  
-   for ( vector<Light*>::const_iterator litr = scene->beginLights(); 
-   		litr != scene->endLights(); 
-   		++litr )
-   {
-                Vec3d thisColor;
-   		Light* pLight = *litr;
-                Vec3d position = r.at(i.t);
-                Vec3d lightDirection = (*pLight).getDirection(position);
-                lightDirection.normalize();
-                Vec3d normal = i.N;
-                normal.normalize();
-                Camera view = scene->getCamera();
-                Vec3d eye = view.getEye();
-                Vec3d viewing = eye - position;
-                viewing.normalize();
-                double intensity = (*pLight).distanceAttenuation(position);
-                Vec3d reflect = normal*(2*(normal*lightDirection)) - lightDirection;
-                reflect.normalize();
-                double shine = max(0.0, shininess(i));
-                double specular = max(0.0, pow(reflect*viewing, shine));
-                thisColor += ka(i)*intensity;//*(*pLight).shadowAttenuation(position);
-                thisColor += kd(i)*((normal*lightDirection)*intensity);//*(*pLight).shadowAttenuation(position);
-                thisColor += ks(i)*specular*intensity;
-                //if(r.type() == ray::REFLECTION)
-                  //color += kr(i);
-                //if(r.type() == ray::REFRACTION)
-                  //color *= ;
-                  Vec3d shadow = (*pLight).shadowAttenuation(position);
-                  thisColor[0] *= shadow[0];
-                  thisColor[1] *= shadow[1];
-                  thisColor[2] *= shadow[2];
-   }
-	
-  color[0] = min(color[0],1.0);
-  color[1] = min(color[1],1.0);
-  color[2] = min(color[2],1.0);
-  color[0] = max(color[0],0.0);
-  color[1] = max(color[1],0.0);
-  color[2] = max(color[2],0.0);
-  return color;
+  //
+  // for ( vector<Light*>::const_iterator litr = scene->beginLights(); 
+  // 		litr != scene->endLights(); 
+  // 		++litr )
+  // {
+  // 		Light* pLight = *litr;
+  // 		.
+  // 		.
+  // 		.
+  // }
 
+  Vec3d intersection = r.at(i.t);
+  Vec3d normal = i.N;
+  normal.normalize();
+  Vec3d viewVector = -(r.getDirection());
+  viewVector.normalize();
+  Vec3d ambientLight = scene->ambient();
+  Vec3d normalizedLight;
+  Vec3d reflectedLight;
+  Vec3d lightIntensity;
+  Vec3d shadowAtt;
+  Vec3d temp;
+  double diffuseDot;
+  double specularDot;
+  double distanceAtt;
+
+  Vec3d result = ke(i) + prod(ka(i), ambientLight);
+
+  for(vector<Light*>::const_iterator litr = scene->beginLights();
+      litr != scene->endLights(); ++litr) {
+    Light* pLight = *litr;
+
+    normalizedLight = pLight->getDirection(intersection);
+    normalizedLight.normalize();
+
+    diffuseDot = normalizedLight[0]*normal[0] +
+                 normalizedLight[1]*normal[1] +
+                 normalizedLight[2]*normal[2];
+
+    reflectedLight = (2 * (diffuseDot) * normal) - normalizedLight;
+    reflectedLight.normalize();
+
+    specularDot = reflectedLight[0]*viewVector[0] +
+                  reflectedLight[1]*viewVector[1] +
+                  reflectedLight[2]*viewVector[2];
+
+    lightIntensity = pLight->getColor(intersection);
+
+    distanceAtt = pLight->distanceAttenuation(intersection);
+    shadowAtt = pLight->shadowAttenuation(intersection);
+
+    temp = prod(lightIntensity, (kd(i)*max(diffuseDot, 0.0) + 
+              ks(i)*pow(max(specularDot, 0.0), shininess(i)))) *
+              distanceAtt;
+    result += prod(temp, shadowAtt);
+  }
+
+  return result;
 }
 
 TextureMap::TextureMap( string filename ) {

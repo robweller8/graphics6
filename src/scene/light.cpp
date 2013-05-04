@@ -22,10 +22,9 @@ Vec3d DirectionalLight::shadowAttenuation( const Vec3d& P ) const
   isect i;
   ray r(P, -orientation, ray::SHADOW);
   if(scene->intersect( r, i )){
-    return Vec3d(0,0,0);
+    return i.getMaterial().kt(i);
   } 
   else {
-cout << "HERE2!!!" << endl;
     return Vec3d(1,1,1);//i.getMaterial().kt(i);
   }
 
@@ -91,9 +90,17 @@ Vec3d PointLight::shadowAttenuation(const Vec3d& P) const
   ray r(P, direction, ray::SHADOW );
   isect i;
   if(scene->intersect( r, i )){
-    return Vec3d(0,0,0);
+    Vec3d iposition = r.at(i.t);
+    Vec3d iray = iposition - P;
+    Vec3d lightray = position - P;
+    double dlight = lightray.length();
+    double diray = iray.length();
+    if(diray > dlight)
+      return Vec3d(1,1,1);
+    else
+      return i.getMaterial().kt(i);
   } 
   else {
-    return Vec3d(1,1,1);//i.getMaterial().kt(i);
+    return Vec3d(1,1,1);
   }
 }
